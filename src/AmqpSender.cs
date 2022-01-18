@@ -29,8 +29,11 @@ namespace AmqpTestConsole
                 var msg = new Amqp.Message(message);
                 msg.Properties = new Amqp.Framing.Properties();
                 msg.Properties.SetCorrelationId(messageId);
-                msg.Properties.CreationTime = DateTime.UtcNow;
+                msg.Properties.CreationTime = DateTime.UtcNow;                
                 msg.Header = new Header() { Durable = true };
+                
+                msg.ApplicationProperties = new ApplicationProperties();
+                msg.ApplicationProperties["myProperty"] = "myValue";                
 
                 sender.Send(msg);
                 Logger.LogMessage($"SendMessage:: {messageId} - {message}");

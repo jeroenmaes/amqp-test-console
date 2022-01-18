@@ -32,6 +32,9 @@ namespace AmqpTestConsole
                 while (!token.IsCancellationRequested)
                 {
                     var msg = receiver.Receive(Timeout.InfiniteTimeSpan);
+                    
+                    var properties = msg.ApplicationProperties;
+                    var myValue = properties["myProperty"].ToString();
 
                     if (msg == null)
                         return;
