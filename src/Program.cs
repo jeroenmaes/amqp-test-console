@@ -14,7 +14,7 @@ namespace AmqpTestConsole
             settings.Queue = ConfigurationManager.AppSettings["queue"];
             //settings.Queue = ConfigurationManager.AppSettings["topic"];
             //settings.Queue = ConfigurationManager.AppSettings["subscription"];
-
+            
             var receiver = new MessageReceiver(settings);
             var sender = new MessageSender(settings);
             
