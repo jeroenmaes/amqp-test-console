@@ -9,6 +9,7 @@ namespace AmqpTestConsole
         private Connection connection;
         private Session session;
         private SenderLink sender;
+        private bool toggle;
 
         public AmqpSender(ConnectionSettings settings) 
         {            
@@ -31,9 +32,19 @@ namespace AmqpTestConsole
                 msg.Properties.SetCorrelationId(messageId);
                 msg.Properties.CreationTime = DateTime.UtcNow;                
                 msg.Header = new Header() { Durable = true };
+
+                if (toggle == true)
+                {
+                    msg.ApplicationProperties = new ApplicationProperties();
+                    msg.ApplicationProperties["myContext"] = "TEST";
+
+                    toggle = false;
+                }
+                else
+                { 
+                    toggle = true;
+                }
                 
-                msg.ApplicationProperties = new ApplicationProperties();
-                msg.ApplicationProperties["myProperty"] = "myValue";                
 
                 sender.Send(msg);
                 Logger.LogMessage($"SendMessage:: {messageId} - {message}");
