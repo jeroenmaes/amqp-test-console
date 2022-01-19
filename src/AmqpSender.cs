@@ -43,7 +43,8 @@ namespace AmqpTestConsole
                 else
                 { 
                     toggle = true;
-                }                
+                }
+                
 
                 sender.Send(msg);
                 Logger.LogMessage($"SendMessage:: {messageId} - {message}");
