@@ -34,7 +34,13 @@ namespace AmqpTestConsole
                     var msg = receiver.Receive(Timeout.InfiniteTimeSpan);
                     
                     var properties = msg.ApplicationProperties;
-                    var myValue = properties["myProperty"].ToString();
+                    if (properties != null)
+                    {
+                        if (properties["myContext"] != null)
+                        {
+                            var myValue = properties["myContext"].ToString();
+                        }                        
+                    }
 
                     if (msg == null)
                         return;

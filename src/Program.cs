@@ -8,16 +8,28 @@ namespace AmqpTestConsole
     {
         static ConnectionSettings settings = new ConnectionSettings();
 
-        static void Main(string[] args)
-        {            
+        static void Main()
+        {
+            try
+            {
+                MainAsync().GetAwaiter().GetResult();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }            
+        }
+
+        static async Task MainAsync()
+        {
             settings.ConnectionString = ConfigurationManager.AppSettings["connection"];
             settings.Queue = ConfigurationManager.AppSettings["queue"];
             //settings.Queue = ConfigurationManager.AppSettings["topic"];
             //settings.Queue = ConfigurationManager.AppSettings["subscription"];
-            
+
             var receiver = new MessageReceiver(settings);
             var sender = new MessageSender(settings);
-            
+
             var receiveStarted = false;
             var sendStarted = false;
             var keyInfo = new ConsoleKeyInfo();
@@ -35,7 +47,7 @@ namespace AmqpTestConsole
                     else
                     {
                         Console.WriteLine("Starting all message receivers...");
-                        StartMessagePumps(receiver);   
+                        StartMessagePumps(receiver);
                     }
 
                     receiveStarted = !receiveStarted;
@@ -57,7 +69,7 @@ namespace AmqpTestConsole
                 }
             }
         }
-      
+
         private static void StartMessageSenders(MessageSender sender)
         {
             sender.Start(settings.Queue);            
