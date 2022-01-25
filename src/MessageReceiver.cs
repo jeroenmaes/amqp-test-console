@@ -21,10 +21,9 @@ namespace AmqpTestConsole
         }
 
         public void Start(string queueName, Func<Message, Task> messageHandler)
-        {
-            
+        {            
             receiver = new AmqpReceiver(_settings);
-            var t = Task.Run(() => receiver.GetMessages(messageHandler, _ct.Token), _ct.Token);
+            var t = Task.Run(async() => await receiver.GetMessages(messageHandler, _ct.Token), _ct.Token);
             
             _tasks.Add(t);
         }

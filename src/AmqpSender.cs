@@ -1,6 +1,7 @@
 ﻿using Amqp;
 using Amqp.Framing;
 using System;
+using System.Threading.Tasks;
 
 namespace AmqpTestConsole
 {
@@ -23,7 +24,7 @@ namespace AmqpTestConsole
             sender = new SenderLink(session, appName, target);
         }
                 
-        internal void PutMessage(string message, string messageId)
+        internal async Task PutMessage(string message, string messageId)
         {
             try
             {
@@ -46,7 +47,7 @@ namespace AmqpTestConsole
                 }
                 
 
-                sender.Send(msg);
+                await sender.SendAsync(msg);
                 Logger.LogMessage($"SendMessage:: {messageId} - {message}");
             }
             catch (Exception ex)

@@ -24,15 +24,17 @@ namespace AmqpTestConsole
             receiver = new ReceiverLink(session, appName, source);
         }
 
-        internal void GetMessages(Func<Message, Task> messageHandler, CancellationToken token)
+        internal async Task GetMessages(Func<Message, Task> messageHandler, CancellationToken token)
         {
             try
             {
 
                 while (!token.IsCancellationRequested)
                 {
-                    var msg = receiver.Receive(Timeout.InfiniteTimeSpan);
-                    
+                    var msg = await receiver.ReceiveAsync(Timeout.InfiniteTimeSpan);
+                    if (msg == null)
+                        return;
+
                     var properties = msg.ApplicationProperties;
                     if (properties != null)
                     {
@@ -41,12 +43,9 @@ namespace AmqpTestConsole
                             var myValue = properties["myContext"].ToString();
                         }                        
                     }
-
-                    if (msg == null)
-                        return;
-
+                    
                     var messageId = msg.Properties.CorrelationId;
-                    messageHandler(new Message { Body = msg.Body.ToString(), MessageId = messageId });
+                    await messageHandler(new Message { Body = msg.Body.ToString(), MessageId = messageId });
 
                     receiver.Accept(msg);
                     

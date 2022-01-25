@@ -80,12 +80,12 @@ namespace AmqpTestConsole
             receiver.Start(settings.Queue, ProcessMessage);            
         }
 
-        private static Task ProcessMessage(Message message)
+        private static async Task ProcessMessage(Message message)
         {
             Logger.LogMessage($"ProcessMessage:: {message.MessageId} - {message.Body}");
 
             //Simulate processing            
-            return Task.Delay(100);
+            await Task.Delay(100);
         }
     }
 }

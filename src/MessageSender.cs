@@ -23,19 +23,19 @@ namespace AmqpTestConsole
         {
 
             sender = new AmqpSender(_settings);
-            var t = Task.Run(() => PutRandomMessages(sender, _ct.Token), _ct.Token);
+            var t = Task.Run(async() => await PutRandomMessages(sender, _ct.Token), _ct.Token);
 
             _tasks.Add(t);
         }
 
-        private void PutRandomMessages(AmqpSender sender, CancellationToken token)
+        private async Task PutRandomMessages(AmqpSender sender, CancellationToken token)
         {
             var generator = new MessageGenerator();
             while (!token.IsCancellationRequested)
             {
-                sender.PutMessage(generator.RandomString(1024), Guid.NewGuid().ToString("N").ToUpper());
-
-                Thread.Sleep(100);
+                await sender.PutMessage(generator.RandomString(1024), Guid.NewGuid().ToString("N").ToUpper());
+                                
+                await Task.Delay(100);
             }
         }
 
