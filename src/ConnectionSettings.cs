@@ -2,7 +2,7 @@
 {
     public class ConnectionSettings
     {                
-        public string ConnectionString { get; set; }
-        public string Queue { get; set; }        
+        public string Server { get; set; }
+        public string Address { get; set; }        
     }
 }

@@ -14,8 +14,8 @@ namespace AmqpTestConsole
 
         public AmqpSender(ConnectionSettings settings) 
         {            
-            string url = settings.ConnectionString;
-            string target = settings.Queue;
+            string url = settings.Server;
+            string target = settings.Address;
             var appName = System.AppDomain.CurrentDomain.FriendlyName;
 
             Address peerAddr = new Address(url);

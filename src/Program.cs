@@ -6,27 +6,34 @@ namespace AmqpTestConsole
 {
     public class Program
     {
-        static ConnectionSettings settings = new ConnectionSettings();
+        static ConnectionSettings settings;
 
         static void Main()
         {
             try
             {
-                MainAsync().GetAwaiter().GetResult();
+                settings = new ConnectionSettings
+                {
+                    Server = ConfigurationManager.AppSettings["connection"],
+                    Address = ConfigurationManager.AppSettings["address"]
+                };
+
+                Console.WriteLine($"*** Connection: '{settings.Server}'");
+                Console.WriteLine($"*** Address: '{settings.Address}'");
+
+                MainImplementation();
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine("Unexpected Exception: " + e.Message);
+                
+                Console.WriteLine("Press any key to exit...");
+                Console.ReadKey();
             }            
         }
 
-        static async Task MainAsync()
-        {
-            settings.ConnectionString = ConfigurationManager.AppSettings["connection"];
-            settings.Queue = ConfigurationManager.AppSettings["queue"];
-            //settings.Queue = ConfigurationManager.AppSettings["topic"];
-            //settings.Queue = ConfigurationManager.AppSettings["subscription"];
-
+        static void MainImplementation()
+        {            
             var receiver = new MessageReceiver(settings);
             var sender = new MessageSender(settings);
 
@@ -72,12 +79,12 @@ namespace AmqpTestConsole
 
         private static void StartMessageSenders(MessageSender sender)
         {
-            sender.Start(settings.Queue);            
+            sender.Start(settings.Address);            
         }
 
         private static void StartMessagePumps(MessageReceiver receiver)
         {
-            receiver.Start(settings.Queue, ProcessMessage);            
+            receiver.Start(settings.Address, ProcessMessage);            
         }
 
         private static async Task ProcessMessage(Message message)
