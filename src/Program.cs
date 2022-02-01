@@ -14,7 +14,7 @@ namespace AmqpTestConsole
         {
             try
             {
-                GetNetVersion();
+                OutputNetVersion();
                 SetHighestTlsVersion();
 
                 settings = new ConnectionSettings
@@ -39,7 +39,7 @@ namespace AmqpTestConsole
             }
         }
 
-        private static void GetNetVersion()
+        private static void OutputNetVersion()
         {
             const string subkey = @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full\";
 
