@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿using Amqp;
+using Microsoft.Win32;
 using System;
 using System.Configuration;
 using System.Net;
@@ -16,6 +17,9 @@ namespace AmqpTestConsole
             {
                 OutputNetVersion();
                 SetHighestTlsVersion();
+                
+                //Disable cert validation --only for testing!
+                //Connection.DisableServerCertValidation = true;
 
                 settings = new ConnectionSettings
                 {
