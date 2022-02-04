@@ -16,7 +16,9 @@ namespace AmqpTestConsole
             try
             {
                 OutputNetVersion();
-                SetHighestTlsVersion();
+                //SetHighestTlsVersion();
+
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
                 
                 //Disable cert validation --only for testing!
                 //Connection.DisableServerCertValidation = true;
