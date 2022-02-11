@@ -16,23 +16,38 @@ namespace AmqpTestConsole
             try
             {
                 OutputNetVersion();
-                //SetHighestTlsVersion();
-
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
                 
                 //Disable cert validation --only for testing!
                 //Connection.DisableServerCertValidation = true;
 
                 settings = new ConnectionSettings
                 {
-                    Server = ConfigurationManager.AppSettings["connection"],
-                    Address = ConfigurationManager.AppSettings["address"]
+                    Protocol = ConfigurationManager.AppSettings["protocol"],
+                    Servers = ConfigurationManager.AppSettings["servers"],
+                    User = ConfigurationManager.AppSettings["user"],
+                    Password = ConfigurationManager.AppSettings["password"],
+                    Address = ConfigurationManager.AppSettings["address"],
+                    Connection = ""
                 };
 
-                Console.WriteLine($"*** Connection: '{settings.Server}'");
+                if (settings.Servers.Split(',').Length == 2)
+                {
+                    var servers = settings.Servers.Split(',');
+                    settings.Connection = $"{settings.Protocol}://{settings.User}:{settings.Password}@{servers[0]},{settings.Protocol}://{settings.User}:{settings.Password}@{servers[1]}";
+                }
+                else if (settings.Servers.Split(',').Length == 1)
+                {
+                    settings.Connection = $"{settings.Protocol}://{settings.User}:{settings.Password}@{settings.Servers}";
+                }
+                else
+                {
+                    throw new Exception("Unexpected amount of servers");
+                }
+
+                Console.WriteLine($"*** Connection: '{settings.Connection}'");
                 Console.WriteLine($"*** Address: '{settings.Address}'");
 
-                MainImplementation();
+                MainImplementation().GetAwaiter().GetResult();
             }
             catch (Exception e)
             {
@@ -88,47 +103,7 @@ namespace AmqpTestConsole
             return "No 4.5 or later version detected";
         }
 
-        private static void SetHighestTlsVersion()
-        {
-            try
-            { 
-                //Setting TLS to 1.3
-                Console.WriteLine("Setting TLS to 1.3 ...");
-                ServicePointManager.SecurityProtocol = (SecurityProtocolType)12288
-                                                     | (SecurityProtocolType)3072
-                                                     | (SecurityProtocolType)768
-                                                     | SecurityProtocolType.Tls;
-            }
-            catch (NotSupportedException)
-            {
-                try
-                {
-                    //Setting TLS to 1.2
-                    Console.WriteLine("Setting TLS to 1.2 ...");
-                    ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072
-                                                         | (SecurityProtocolType)768
-                                                         | SecurityProtocolType.Tls;
-                }
-                catch (NotSupportedException)
-                {
-                    try
-                    {
-                        //Setting TLS to 1.1
-                        Console.WriteLine("Setting TLS to 1.1 ...");
-                        ServicePointManager.SecurityProtocol = (SecurityProtocolType)768
-                                                             | SecurityProtocolType.Tls;
-                    }
-                    catch (NotSupportedException)
-                    {
-                        //Setting TLS to 1.0
-                        Console.WriteLine("Setting TLS to 1.0 ...");
-                        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls;
-                    }
-                }
-            }
-        }
-
-        static void MainImplementation()
+        static async Task MainImplementation()
         {
             var receiver = new MessageReceiver(settings);
             var sender = new MessageSender(settings);
@@ -145,12 +120,12 @@ namespace AmqpTestConsole
                     if (receiveStarted)
                     {
                         Console.WriteLine("Stopping all message receivers...");
-                        receiver.StopAll();
+                        await receiver.StopAll();
                     }
                     else
                     {
                         Console.WriteLine("Starting all message receivers...");
-                        StartMessagePumps(receiver);
+                        await StartMessagePumps(receiver);
                     }
 
                     receiveStarted = !receiveStarted;
@@ -160,12 +135,12 @@ namespace AmqpTestConsole
                     if (sendStarted)
                     {
                         Console.WriteLine("Stopping all message senders...");
-                        sender.StopAll();
+                        await sender.StopAll();
                     }
                     else
                     {
                         Console.WriteLine("Starting all message senders...");
-                        StartMessageSenders(sender);
+                        await StartMessageSenders(sender);
                     }
 
                     sendStarted = !sendStarted;
@@ -173,14 +148,14 @@ namespace AmqpTestConsole
             }
         }
 
-        private static void StartMessageSenders(MessageSender sender)
+        private static async Task StartMessageSenders(MessageSender sender)
         {
-            sender.Start(settings.Address);
+            await sender.Start(settings.Address);
         }
 
-        private static void StartMessagePumps(MessageReceiver receiver)
+        private static async Task StartMessagePumps(MessageReceiver receiver)
         {
-            receiver.Start(settings.Address, ProcessMessage);
+            await receiver.Start(settings.Address, ProcessMessage);
         }
 
         private static async Task ProcessMessage(Message message)

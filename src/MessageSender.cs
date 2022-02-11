@@ -11,7 +11,7 @@ namespace AmqpTestConsole
         private ConcurrentBag<Task> _tasks;
         private readonly ConnectionSettings _settings;
         private CancellationTokenSource _ct;
-        private AmqpSender sender;
+        private ArtemisSender sender;
 
         public MessageSender(ConnectionSettings settings)
         {
@@ -19,16 +19,17 @@ namespace AmqpTestConsole
             _tasks = new ConcurrentBag<Task>();
             _ct = new CancellationTokenSource();
         }
-        public void Start(string queueName)
+        public async Task Start(string queueName)
         {
 
-            sender = new AmqpSender(_settings);
+            sender = new ArtemisSender(_settings);
+            await sender.Init();
             var t = Task.Run(async() => await PutRandomMessages(sender, _ct.Token), _ct.Token);
 
             _tasks.Add(t);
         }
 
-        private async Task PutRandomMessages(AmqpSender sender, CancellationToken token)
+        private async Task PutRandomMessages(ArtemisSender sender, CancellationToken token)
         {
             var generator = new MessageGenerator();
             while (!token.IsCancellationRequested)
@@ -39,16 +40,16 @@ namespace AmqpTestConsole
             }
         }
 
-        public void StopAll()
+        public async Task StopAll()
         {
             _ct.Cancel();
-            Task.WhenAll(_tasks.ToArray()).ConfigureAwait(false);
+            await Task.WhenAll(_tasks.ToArray()).ConfigureAwait(false);
             _ct.Dispose();
 
             _tasks = new ConcurrentBag<Task>();
             _ct = new CancellationTokenSource();
 
-            sender.Dispose();
+           sender.Dispose();
         }
     }
 }
