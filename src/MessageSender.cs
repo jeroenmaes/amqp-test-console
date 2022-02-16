@@ -19,7 +19,7 @@ namespace AmqpTestConsole
             _tasks = new ConcurrentBag<Task>();
             _ct = new CancellationTokenSource();
         }
-        public async Task Start(string queueName)
+        public async Task Start()
         {
 
             sender = new ArtemisSender(_settings);

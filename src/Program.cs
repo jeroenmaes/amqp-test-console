@@ -153,12 +153,12 @@ namespace AmqpTestConsole
 
         private static async Task StartMessageSenders(MessageSender sender)
         {
-            await sender.Start(settings.SendAddress);
+            await sender.Start();
         }
 
         private static async Task StartMessagePumps(MessageReceiver receiver)
         {
-            await receiver.Start(settings.ReceiveAddress, ProcessMessage);
+            await receiver.Start(ProcessMessage);
         }
 
         private static async Task ProcessMessage(Message message)

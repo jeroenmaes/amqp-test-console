@@ -20,7 +20,7 @@ namespace AmqpTestConsole
             _ct = new CancellationTokenSource();
         }
 
-        public async Task Start(string queueName, Func<Message, Task> messageHandler)
+        public async Task Start(Func<Message, Task> messageHandler)
         {            
             receiver = new ArtemisReceiver(_settings);
             await receiver.Init();
