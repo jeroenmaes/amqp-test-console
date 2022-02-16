@@ -24,7 +24,9 @@ namespace AmqpTestConsole
         public async Task Init()
         {
             var connectionFactory = new ConnectionFactory();
-            var endpoint = Endpoint.Create("localhost", 61616, "artemis", "simetraehcapa");
+
+            //single endpoint
+            //var endpoint = Endpoint.Create("localhost", 61616, "artemis", "simetraehcapa");
 
             var masterEndpoint = Endpoint.Create("localhost", 61616, "artemis", "simetraehcapa", Scheme.Amqp);
             var slaveEndpoint = Endpoint.Create("localhost", 61616, "artemis", "simetraehcapa", Scheme.Amqp);
@@ -92,8 +94,7 @@ namespace AmqpTestConsole
             catch (Exception ex)
             {
                 Logger.LogError(ex);
-            }
-            
+            }            
         }
     }
 }
