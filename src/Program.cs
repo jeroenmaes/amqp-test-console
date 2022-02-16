@@ -26,7 +26,8 @@ namespace AmqpTestConsole
                     Servers = ConfigurationManager.AppSettings["servers"],
                     User = ConfigurationManager.AppSettings["user"],
                     Password = ConfigurationManager.AppSettings["password"],
-                    Address = ConfigurationManager.AppSettings["address"],
+                    SendAddress = ConfigurationManager.AppSettings["send-address"],
+                    ReceiveAddress = ConfigurationManager.AppSettings["receive-address"],
                     Connection = ""
                 };
 
@@ -45,7 +46,9 @@ namespace AmqpTestConsole
                 }
 
                 Console.WriteLine($"*** Connection: '{settings.Connection}'");
-                Console.WriteLine($"*** Address: '{settings.Address}'");
+                Console.WriteLine($"*** Send-Address: '{settings.SendAddress}'");
+                Console.WriteLine($"*** Receive-Address: '{settings.ReceiveAddress}'");
+
 
                 MainImplementation().GetAwaiter().GetResult();
             }
@@ -150,12 +153,12 @@ namespace AmqpTestConsole
 
         private static async Task StartMessageSenders(MessageSender sender)
         {
-            await sender.Start(settings.Address);
+            await sender.Start(settings.SendAddress);
         }
 
         private static async Task StartMessagePumps(MessageReceiver receiver)
         {
-            await receiver.Start(settings.Address, ProcessMessage);
+            await receiver.Start(settings.ReceiveAddress, ProcessMessage);
         }
 
         private static async Task ProcessMessage(Message message)

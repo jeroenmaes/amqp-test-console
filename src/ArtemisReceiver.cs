@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using ActiveMQ.Artemis.Client;
@@ -15,34 +16,68 @@ namespace AmqpTestConsole
         public ArtemisReceiver(ConnectionSettings settings) 
         {
             _settings = settings;
-            string url = settings.Connection;
-            string source = settings.Address;
-            var appName = System.AppDomain.CurrentDomain.FriendlyName;
-                              
+            var appName = System.AppDomain.CurrentDomain.FriendlyName;                              
         }
 
         public async Task Init()
         {
             var connectionFactory = new ConnectionFactory();
 
-            //single endpoint
-            //var endpoint = Endpoint.Create("localhost", 61616, "artemis", "simetraehcapa");
+            Scheme schema = Scheme.Amqp;
+            if (_settings.Protocol == "amqp")
+                schema = Scheme.Amqp;
+            else if (_settings.Protocol == "amqps")
+                schema = Scheme.Amqps;
 
-            var masterEndpoint = Endpoint.Create("localhost", 61616, "artemis", "simetraehcapa", Scheme.Amqp);
-            var slaveEndpoint = Endpoint.Create("localhost", 61616, "artemis", "simetraehcapa", Scheme.Amqp);
+            var endpoints = new List<Endpoint>();
 
-            connection = await connectionFactory.CreateAsync(new[]
+            if (!_settings.Servers.Contains(","))
             {
-                masterEndpoint,
-                slaveEndpoint
-            });            
+                var master = _settings.Servers;
+                var masterServer = master.Split(':')[0];
+                var masterPort = master.Split(':')[1];
+                var masterEndpoint = Endpoint.Create(masterServer, int.Parse(masterPort), _settings.User, _settings.Password, schema);
+                endpoints.Add(masterEndpoint);
+
+            }
+            else
+            {
+
+                var master = _settings.Servers.Split(',')[0];
+                var masterServer = master.Split(':')[0];
+                var masterPort = master.Split(':')[1];
+
+                var slave = _settings.Servers.Split(',')[1];
+                var slaveServer = slave.Split(':')[0];
+                var slavePort = slave.Split(':')[1];
+
+                var masterEndpoint = Endpoint.Create(masterServer, int.Parse(masterPort), _settings.User, _settings.Password, schema);
+                var slaveEndpoint = Endpoint.Create(slaveServer, int.Parse(slavePort), _settings.User, _settings.Password, schema);
+                endpoints.Add(masterEndpoint);
+                endpoints.Add(slaveEndpoint);
+            }
+
+            connection = await connectionFactory.CreateAsync(endpoints);
             connection.ConnectionRecoveryError += (sender, eventArgs) =>
             {
                 Logger.LogMessage("Consumer Connection Error:" + eventArgs.Exception.Message);
             };
 
+            var address = "";
+            var queue = "";
+            if (_settings.ReceiveAddress.Contains("::"))
+            {
+                address = _settings.ReceiveAddress.Split(':')[0];
+                queue = _settings.ReceiveAddress.Split(':')[2];
 
-            receiver = await connection.CreateConsumerAsync(new ConsumerConfiguration { Address = "test.topic", Queue ="test.topic1" });
+            }
+            else
+            { 
+                address = _settings.ReceiveAddress;
+                queue = _settings.ReceiveAddress;
+            }
+
+            receiver = await connection.CreateConsumerAsync(new ConsumerConfiguration { Address = address, Queue = queue });
         }
 
         internal async Task GetMessages(Func<Message, Task> messageHandler, CancellationToken token)

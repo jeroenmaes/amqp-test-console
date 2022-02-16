@@ -2,7 +2,9 @@
 {
     public class ConnectionSettings
     {
-        public string Address { get; set; }
+        public string ReceiveAddress { get; set; }
+        public string SendAddress { get; set; }
+
         public string Protocol { get; internal set; }
         public string Servers { get; internal set; }
         public string User { get; internal set; }
