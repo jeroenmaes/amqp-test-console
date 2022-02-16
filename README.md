@@ -1,4 +1,6 @@
-# amqp-test-console
-.net sender/receiver sample using [AMQPNetLite](https://github.com/Azure/amqpnetlite)
+# artemis-test-console
+.net sender/receiver sample using [ArtemisNetClient](https://havret.github.io/dotnet-activemq-artemis-client/)
 
-This sample illustrates the usage of the AMQPNetLite client. It will send random message to a queue and receive from the same queue asynchronously.
+This sample illustrates the usage of the ArtemisNetClient client. 
+It started out as a sample only using the AmqpNetLite client, but that one does not support failover.
+The ArtemisNetClient is based on AmqpNetLite and comes with failover support out of the box.
