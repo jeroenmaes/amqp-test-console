@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using ActiveMQ.Artemis.Client;
+using AmqpTest;
+using Microsoft.Extensions.Logging;
 
-
-namespace AmqpTestConsole
+namespace AmqpTest
 {
     internal class ArtemisReceiver : IDisposable
     {
@@ -22,6 +23,7 @@ namespace AmqpTestConsole
         public async Task Init()
         {
             var connectionFactory = new ConnectionFactory();
+            connectionFactory.LoggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
 
             Scheme schema = Scheme.Amqp;
             if (_settings.Protocol == "amqp")
@@ -80,7 +82,7 @@ namespace AmqpTestConsole
             receiver = await connection.CreateConsumerAsync(new ConsumerConfiguration { Address = address, Queue = queue });
         }
 
-        internal async Task GetMessages(Func<Message, Task> messageHandler, CancellationToken token)
+        internal async Task GetMessages(Func<AmqpTest.Message, Task> messageHandler, CancellationToken token)
         {
             try
             {

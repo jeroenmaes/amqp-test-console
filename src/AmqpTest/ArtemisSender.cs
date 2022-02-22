@@ -1,10 +1,11 @@
 ﻿
 using ActiveMQ.Artemis.Client;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace AmqpTestConsole
+namespace AmqpTest
 {
     internal class ArtemisSender : IDisposable
     {
@@ -23,6 +24,7 @@ namespace AmqpTestConsole
         public async Task Init()
         {
             var connectionFactory = new ConnectionFactory();
+            connectionFactory.LoggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
 
             Scheme schema = Scheme.Amqp;
             if (_settings.Protocol == "amqp")

@@ -4,9 +4,9 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace AmqpTestConsole
+namespace AmqpTest
 {
-    class MessageReceiver
+    public class MessageReceiver
     {
         private ConcurrentBag<Task> _tasks;
         private readonly ConnectionSettings _settings;

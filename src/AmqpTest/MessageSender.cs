@@ -4,7 +4,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace AmqpTestConsole
+namespace AmqpTest
 {
     public class MessageSender
     {

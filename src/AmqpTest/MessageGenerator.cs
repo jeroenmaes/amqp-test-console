@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 
-namespace AmqpTestConsole
+namespace AmqpTest
 {
     public class MessageGenerator
     {

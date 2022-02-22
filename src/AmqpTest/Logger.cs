@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace AmqpTestConsole
+namespace AmqpTest
 {
     public static class Logger
     {
