@@ -1,25 +1,21 @@
-﻿using Amqp;
-using AmqpTest;
+﻿using AmqpTest;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Win32;
-using System;
-using System.Configuration;
-using System.Net;
+using Microsoft.Extensions.Logging;
 using System.Reflection;
 using System.Runtime.Versioning;
-using System.Threading.Tasks;
 
 namespace AmqpTestConsole
 {
     public class Program
-    {
-        static ConnectionSettings settings;
+    {       
 
         static void Main()
         {
-
+            ConnectionSettings settings;
             var builder = new ConfigurationBuilder()
                 .AddJsonFile($"appsettings.json", true, true);
+
+            var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
 
             var config = builder.Build();
 
@@ -39,7 +35,7 @@ namespace AmqpTestConsole
 
             try
             {
-                
+
                 settings = new ConnectionSettings
                 {
                     Protocol = config["protocol"],
@@ -65,14 +61,12 @@ namespace AmqpTestConsole
                     throw new Exception("Unexpected amount of servers");
                 }
 
-
-
                 Console.WriteLine($"*** Connection: '{settings.Connection}'");
                 Console.WriteLine($"*** Send-Address: '{settings.SendAddress}'");
                 Console.WriteLine($"*** Receive-Address: '{settings.ReceiveAddress}'");
 
 
-                MainImplementation().GetAwaiter().GetResult();
+                MainImplementation(settings, loggerFactory).GetAwaiter().GetResult();
             }
             catch (Exception e)
             {
@@ -85,10 +79,10 @@ namespace AmqpTestConsole
             }
         }
 
-        static async Task MainImplementation()
+        static async Task MainImplementation(ConnectionSettings settings, ILoggerFactory loggerFactory)
         {
-            var receiver = new MessageReceiver(settings);
-            var sender = new MessageSender(settings);
+            var receiver = new MessageReceiver(settings, loggerFactory);
+            var sender = new MessageSender(settings, loggerFactory);
 
             var receiveStarted = false;
             var sendStarted = false;
@@ -135,12 +129,12 @@ namespace AmqpTestConsole
             await sender.Start();
         }
 
-        private static async Task StartMessagePumps(AmqpTest.MessageReceiver receiver)
+        private static async Task StartMessagePumps(MessageReceiver receiver)
         {
             await receiver.Start(ProcessMessage);
         }
 
-        private static async Task ProcessMessage(AmqpTest.Message message)
+        private static async Task ProcessMessage(Message message)
         {
             Logger.LogMessage($"ProcessMessage:: {message.MessageId} - {message.Body}");
 

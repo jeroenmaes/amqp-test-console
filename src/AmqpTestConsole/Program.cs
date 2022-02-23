@@ -1,27 +1,23 @@
-﻿using Amqp;
-using AmqpTest;
+﻿using AmqpTest;
+using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using System;
 using System.Configuration;
-using System.Net;
 using System.Threading.Tasks;
 
 namespace AmqpTestConsole
 {
     public class Program
     {
-        static ConnectionSettings settings;
-
         static void Main()
         {
             try
             {
                 OutputNetVersion();
-                
-                //Disable cert validation --only for testing!
-                //Connection.DisableServerCertValidation = true;
 
-                settings = new ConnectionSettings
+                var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+
+                ConnectionSettings settings = new ConnectionSettings
                 {
                     Protocol = ConfigurationManager.AppSettings["protocol"],
                     Servers = ConfigurationManager.AppSettings["servers"],
@@ -51,7 +47,7 @@ namespace AmqpTestConsole
                 Console.WriteLine($"*** Receive-Address: '{settings.ReceiveAddress}'");
 
 
-                MainImplementation().GetAwaiter().GetResult();
+                MainImplementation(settings, loggerFactory).GetAwaiter().GetResult();
             }
             catch (Exception e)
             {
@@ -107,10 +103,10 @@ namespace AmqpTestConsole
             return "No 4.5 or later version detected";
         }
 
-        static async Task MainImplementation()
+        static async Task MainImplementation(ConnectionSettings settings, ILoggerFactory loggerFactory)
         {
-            var receiver = new MessageReceiver(settings);
-            var sender = new MessageSender(settings);
+            var receiver = new MessageReceiver(settings, loggerFactory);
+            var sender = new MessageSender(settings, loggerFactory);
 
             var receiveStarted = false;
             var sendStarted = false;

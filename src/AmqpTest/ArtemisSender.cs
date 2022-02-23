@@ -1,8 +1,10 @@
 ﻿
 using ActiveMQ.Artemis.Client;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AmqpTest
@@ -14,17 +16,27 @@ namespace AmqpTest
         private IProducer producer;
         private IConnection connection;
         private ConnectionSettings _settings;
+        private ILoggerFactory _loggerFactory;
 
-        public ArtemisSender(ConnectionSettings settings)
+        public ArtemisSender(ConnectionSettings settings, ILoggerFactory loggerFactory = null)
         {
-            _settings = settings;
-            var appName = System.AppDomain.CurrentDomain.FriendlyName;
+            _settings = settings;            
+            if (loggerFactory == null)
+            {
+                _loggerFactory = new NullLoggerFactory();
+            }
+            else
+            {
+                _loggerFactory = loggerFactory;
+            }
         }
 
-        public async Task Init()
+        public async Task Init(CancellationToken token)
         {
-            var connectionFactory = new ConnectionFactory();
-            connectionFactory.LoggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+            var connectionFactory = new ConnectionFactory
+            {
+                LoggerFactory = _loggerFactory
+            };
 
             Scheme schema = Scheme.Amqp;
             if (_settings.Protocol == "amqp")
@@ -60,12 +72,8 @@ namespace AmqpTest
                 endpoints.Add(slaveEndpoint);
             }
 
-            connection = await connectionFactory.CreateAsync(endpoints);
-            connection.ConnectionRecoveryError += (sender, eventArgs) =>
-            {
-                Logger.LogMessage("Producer Connection Error:" + eventArgs.Exception.Message);
-            };
-
+            connection = await connectionFactory.CreateAsync(endpoints, token);
+            
             producer = await connection.CreateProducerAsync(new ProducerConfiguration
             {
                 Address = _settings.SendAddress,
@@ -74,13 +82,15 @@ namespace AmqpTest
 
         }
 
-        internal async Task PutMessage(string message, string messageId)
+        internal async Task PutMessage(string message, string messageId, CancellationToken token)
         {
             try
             {
-                var msg = new ActiveMQ.Artemis.Client.Message(message);
-                msg.CorrelationId = messageId;
-                msg.CreationTime = DateTime.UtcNow;
+                var msg = new ActiveMQ.Artemis.Client.Message(message)
+                {
+                    CorrelationId = messageId,
+                    CreationTime = DateTime.UtcNow
+                };
 
                 if (toggle == true)
                 {
@@ -92,8 +102,13 @@ namespace AmqpTest
                     toggle = true;
                 }
 
-                await producer.SendAsync(msg);
+                await producer.SendAsync(msg, token);
+
                 Logger.LogMessage($"SendMessage:: {messageId} - {message}");
+            }
+            catch (OperationCanceledException /*ex*/)
+            { 
+                //ignore
             }
             catch (Exception ex)
             {
@@ -107,8 +122,7 @@ namespace AmqpTest
         {
             try
             {
-                await connection.DisposeAsync();
-                await producer.DisposeAsync();
+                await connection.DisposeAsync();                
             }
             catch (Exception ex)
             {

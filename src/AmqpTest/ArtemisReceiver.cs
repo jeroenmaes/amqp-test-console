@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using ActiveMQ.Artemis.Client;
-using AmqpTest;
+using ActiveMQ.Artemis.Client.Exceptions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace AmqpTest
 {
@@ -13,17 +14,27 @@ namespace AmqpTest
         private IConsumer receiver;
         private ConnectionSettings _settings;
         private IConnection connection;
+        private ILoggerFactory _loggerFactory;
 
-        public ArtemisReceiver(ConnectionSettings settings) 
+        public ArtemisReceiver(ConnectionSettings settings, ILoggerFactory loggerFactory = null)
         {
-            _settings = settings;
-            var appName = System.AppDomain.CurrentDomain.FriendlyName;                              
+            _settings = settings;            
+            if (loggerFactory == null)
+            {
+                _loggerFactory = new NullLoggerFactory();
+            }
+            else
+            {
+                _loggerFactory = loggerFactory;
+            }
         }
 
-        public async Task Init()
+        public async Task Init(CancellationToken token)
         {
-            var connectionFactory = new ConnectionFactory();
-            connectionFactory.LoggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+            var connectionFactory = new ConnectionFactory
+            {
+                LoggerFactory = _loggerFactory
+            };
 
             Scheme schema = Scheme.Amqp;
             if (_settings.Protocol == "amqp")
@@ -59,22 +70,17 @@ namespace AmqpTest
                 endpoints.Add(slaveEndpoint);
             }
 
-            connection = await connectionFactory.CreateAsync(endpoints);
-            connection.ConnectionRecoveryError += (sender, eventArgs) =>
-            {
-                Logger.LogMessage("Consumer Connection Error:" + eventArgs.Exception.Message);
-            };
-
+            connection = await connectionFactory.CreateAsync(endpoints, token);
+           
             var address = "";
             var queue = "";
             if (_settings.ReceiveAddress.Contains("::"))
             {
                 address = _settings.ReceiveAddress.Split(':')[0];
                 queue = _settings.ReceiveAddress.Split(':')[2];
-
             }
             else
-            { 
+            {
                 address = _settings.ReceiveAddress;
                 queue = _settings.ReceiveAddress;
             }
@@ -86,52 +92,61 @@ namespace AmqpTest
         {
             try
             {
-
                 while (!token.IsCancellationRequested)
                 {
-                    var msg = await receiver.ReceiveAsync(token);
-                    if (msg == null)
-                        return;
-
-                    var properties = msg.ApplicationProperties;
-                    if (properties != null)
+                    try
                     {
-                        if (properties["myContext"] != null)
-                        {
-                            var myValue = properties["myContext"].ToString();
-                        }                        
-                    }
-                    
-                    var messageId = msg.CorrelationId;
-                    await messageHandler(new Message { Body = msg.GetBody<string>().ToString(), MessageId = messageId });
+                        var msg = await receiver.ReceiveAsync(token);
+                        if (msg == null)
+                            return;
 
-                    await receiver.AcceptAsync(msg);
-                    
+                        var properties = msg.ApplicationProperties;
+                        if (properties != null)
+                        {
+                            if (properties["myContext"] != null)
+                            {
+                                var myValue = properties["myContext"].ToString();
+                            }
+                        }
+
+                        var messageId = msg.CorrelationId;
+                        await messageHandler(new Message { Body = msg.GetBody<string>().ToString(), MessageId = messageId });
+
+                        await receiver.AcceptAsync(msg);
+                    }
+                    catch (ConsumerClosedException e)
+                    {
+                        //Only message, ConnectionFactory will handle reconnect
+                        Logger.LogWarning(e);
+                    }                    
+
                     token.ThrowIfCancellationRequested();
 
                     Thread.Sleep(100);
                 }
+            }
+            catch (OperationCanceledException /*ex*/)
+            {
+                //ignore
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex);
 
                 Dispose();
-            }          
-
+            }
         }
 
         public async void Dispose()
         {
             try
             {
-                await connection.DisposeAsync();
-                await receiver.DisposeAsync();
+                await connection.DisposeAsync();                
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex);
-            }            
+            }
         }
     }
 }
