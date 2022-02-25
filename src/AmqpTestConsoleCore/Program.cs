@@ -95,12 +95,12 @@ namespace AmqpTestConsole
                 {
                     if (receiveStarted)
                     {
-                        Console.WriteLine("Stopping all message receivers...");
+                        _logger.LogInformation("Stopping all message receivers...");
                         await receiver.StopAll();
                     }
                     else
                     {
-                        Console.WriteLine("Starting all message receivers...");
+                        _logger.LogInformation("Starting all message receivers...");
                         await StartMessagePumps(receiver);
                     }
 
@@ -110,12 +110,12 @@ namespace AmqpTestConsole
                 {
                     if (sendStarted)
                     {
-                        Console.WriteLine("Stopping all message senders...");
+                        _logger.LogInformation("Stopping all message senders...");
                         await sender.StopAll();
                     }
                     else
                     {
-                        Console.WriteLine("Starting all message senders...");
+                        _logger.LogInformation("Starting all message senders...");
                         await StartMessageSenders(sender);
                     }
 
