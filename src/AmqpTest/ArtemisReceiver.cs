@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using ActiveMQ.Artemis.Client;
@@ -9,15 +8,12 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace AmqpTest
 {
-    internal class ArtemisReceiver : IDisposable
+    internal class ArtemisReceiver : ArtemisConnection, IDisposable
     {
-        private IConsumer receiver;
-        private ConnectionSettings _settings;
-        private IConnection connection;
-        private ILoggerFactory _loggerFactory;
+        private IConsumer receiver;        
         private ILogger _logger;
 
-        public ArtemisReceiver(ConnectionSettings settings, ILoggerFactory loggerFactory = null)
+        public ArtemisReceiver(ConnectionSettings settings, ILoggerFactory loggerFactory = null) : base(settings, loggerFactory)
         {
             _logger = ApplicationLogging.CreateLogger<ArtemisReceiver>();
             _settings = settings;            
@@ -31,48 +27,9 @@ namespace AmqpTest
             }
         }
 
-        public async Task Init(CancellationToken token)
+        new public async Task Init(CancellationToken token)
         {
-            var connectionFactory = new ConnectionFactory
-            {
-                LoggerFactory = _loggerFactory
-            };
-
-            Scheme schema = Scheme.Amqp;
-            if (_settings.Protocol == "amqp")
-                schema = Scheme.Amqp;
-            else if (_settings.Protocol == "amqps")
-                schema = Scheme.Amqps;
-
-            var endpoints = new List<Endpoint>();
-
-            if (!_settings.Servers.Contains(","))
-            {
-                var master = _settings.Servers;
-                var masterServer = master.Split(':')[0];
-                var masterPort = master.Split(':')[1];
-                var masterEndpoint = Endpoint.Create(masterServer, int.Parse(masterPort), _settings.User, _settings.Password, schema);
-                endpoints.Add(masterEndpoint);
-
-            }
-            else
-            {
-
-                var master = _settings.Servers.Split(',')[0];
-                var masterServer = master.Split(':')[0];
-                var masterPort = master.Split(':')[1];
-
-                var slave = _settings.Servers.Split(',')[1];
-                var slaveServer = slave.Split(':')[0];
-                var slavePort = slave.Split(':')[1];
-
-                var masterEndpoint = Endpoint.Create(masterServer, int.Parse(masterPort), _settings.User, _settings.Password, schema);
-                var slaveEndpoint = Endpoint.Create(slaveServer, int.Parse(slavePort), _settings.User, _settings.Password, schema);
-                endpoints.Add(masterEndpoint);
-                endpoints.Add(slaveEndpoint);
-            }
-
-            connection = await connectionFactory.CreateAsync(endpoints, token);
+            await base.Init(token);
            
             var address = "";
             var queue = "";
@@ -87,7 +44,7 @@ namespace AmqpTest
                 queue = _settings.ReceiveAddress;
             }
 
-            receiver = await connection.CreateConsumerAsync(new ConsumerConfiguration { Address = address, Queue = queue });
+            receiver = await _connection.CreateConsumerAsync(new ConsumerConfiguration { Address = address, Queue = queue });
         }
 
         internal async Task GetMessages(Func<AmqpTest.Message, Task> messageHandler, CancellationToken token)
@@ -135,19 +92,7 @@ namespace AmqpTest
             {
                 _logger.LogError(ex, "Unexpected Exception");
 
-                Dispose();
-            }
-        }
-
-        public async void Dispose()
-        {
-            try
-            {
-                await connection.DisposeAsync();                
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected Exception");
+                base.Dispose();
             }
         }
     }
