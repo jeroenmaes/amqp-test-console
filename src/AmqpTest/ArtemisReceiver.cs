@@ -15,9 +15,11 @@ namespace AmqpTest
         private ConnectionSettings _settings;
         private IConnection connection;
         private ILoggerFactory _loggerFactory;
+        private ILogger _logger;
 
         public ArtemisReceiver(ConnectionSettings settings, ILoggerFactory loggerFactory = null)
         {
+            _logger = ApplicationLogging.CreateLogger<ArtemisReceiver>();
             _settings = settings;            
             if (loggerFactory == null)
             {
@@ -117,7 +119,7 @@ namespace AmqpTest
                     catch (ConsumerClosedException e)
                     {
                         //Only message, ConnectionFactory will handle reconnect
-                        Logger.LogWarning(e);
+                        _logger.LogWarning(e, "ConsumerClosedException");
                     }                    
 
                     token.ThrowIfCancellationRequested();
@@ -131,7 +133,7 @@ namespace AmqpTest
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex);
+                _logger.LogError(ex, "Unexpected Exception");
 
                 Dispose();
             }
@@ -145,7 +147,7 @@ namespace AmqpTest
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex);
+                _logger.LogError(ex, "Unexpected Exception");
             }
         }
     }

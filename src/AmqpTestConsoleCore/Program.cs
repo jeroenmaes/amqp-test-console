@@ -7,15 +7,16 @@ using System.Runtime.Versioning;
 namespace AmqpTestConsole
 {
     public class Program
-    {       
+    {
+        private static ILogger _logger;
 
         static void Main()
         {
-            ConnectionSettings settings;
-            var builder = new ConfigurationBuilder()
-                .AddJsonFile($"appsettings.json", true, true);
+            var builder = new ConfigurationBuilder().AddJsonFile($"appsettings.json", true, true);
 
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+            ApplicationLogging.LoggerFactory = loggerFactory;
+            _logger = ApplicationLogging.CreateLogger<Program>();
 
             var config = builder.Build();
 
@@ -30,13 +31,13 @@ namespace AmqpTestConsole
                 AspDotnetVersion = framework
             };
 
-            Console.WriteLine($"-- OS: '{stats.OsPlatform}'");
-            Console.WriteLine($"-- Dotnet : '{stats.AspDotnetVersion}'");
+            _logger.LogInformation($"OS: '{stats.OsPlatform}'");
+            _logger.LogInformation($"Dotnet: '{stats.AspDotnetVersion}'");
 
             try
             {
 
-                settings = new ConnectionSettings
+                ConnectionSettings settings = new ConnectionSettings
                 {
                     Protocol = config["protocol"],
                     Servers = config["servers"],
@@ -60,19 +61,18 @@ namespace AmqpTestConsole
                 {
                     throw new Exception("Unexpected amount of servers");
                 }
-
-                Console.WriteLine($"*** Connection: '{settings.Connection}'");
-                Console.WriteLine($"*** Send-Address: '{settings.SendAddress}'");
-                Console.WriteLine($"*** Receive-Address: '{settings.ReceiveAddress}'");
+                _logger.LogInformation($"Connection: '{settings.Connection}'");
+                _logger.LogInformation($"Send-Address: '{settings.SendAddress}'");
+                _logger.LogInformation($"Receive-Address: '{settings.ReceiveAddress}'");
 
 
                 MainImplementation(settings, loggerFactory).GetAwaiter().GetResult();
             }
             catch (Exception e)
             {
-                Console.WriteLine("Unexpected Exception: " + e.Message);
+                _logger.LogError(e, "Unexpected Exception");
                 if (e.InnerException != null)
-                    Console.WriteLine("Inner Exception: " + e.InnerException.Message);
+                    _logger.LogError(e.InnerException, "Inner Exception");
 
                 Console.WriteLine("Press any key to exit...");
                 Console.ReadKey();
@@ -135,8 +135,8 @@ namespace AmqpTestConsole
         }
 
         private static async Task ProcessMessage(Message message)
-        {
-            Logger.LogMessage($"ProcessMessage:: {message.MessageId} - {message.Body}");
+        {            
+            _logger.LogInformation($"ProcessMessage:: {message.MessageId} - {message.Body.Substring(0, 40)}...");
 
             //Simulate processing            
             await Task.Delay(100);

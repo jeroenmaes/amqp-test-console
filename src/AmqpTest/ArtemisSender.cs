@@ -15,11 +15,13 @@ namespace AmqpTest
         private bool toggle;
         private IProducer producer;
         private IConnection connection;
+        private ILogger _logger;
         private ConnectionSettings _settings;
         private ILoggerFactory _loggerFactory;
 
         public ArtemisSender(ConnectionSettings settings, ILoggerFactory loggerFactory = null)
         {
+            _logger = ApplicationLogging.CreateLogger<ArtemisReceiver>();
             _settings = settings;            
             if (loggerFactory == null)
             {
@@ -104,7 +106,7 @@ namespace AmqpTest
 
                 await producer.SendAsync(msg, token);
 
-                Logger.LogMessage($"SendMessage:: {messageId} - {message}");
+                _logger.LogInformation($"SendMessage:: {messageId} - {message.Substring(0, 40)}...");
             }
             catch (OperationCanceledException /*ex*/)
             { 
@@ -112,7 +114,7 @@ namespace AmqpTest
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex);
+                _logger.LogError(ex, "Unexpected Exception");
 
                 Dispose();
             }
@@ -126,7 +128,7 @@ namespace AmqpTest
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex);
+                _logger.LogError(ex, "Unexpected Exception");
             }
         }
     }

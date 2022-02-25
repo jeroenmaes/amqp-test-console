@@ -9,14 +9,18 @@ namespace AmqpTestConsole
 {
     public class Program
     {
+        private static ILogger _logger;
+
         static void Main()
         {
+            var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+            ApplicationLogging.LoggerFactory = loggerFactory;
+            _logger = ApplicationLogging.CreateLogger<Program>();
+
             try
             {
                 OutputNetVersion();
-
-                var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-
+                                
                 ConnectionSettings settings = new ConnectionSettings
                 {
                     Protocol = ConfigurationManager.AppSettings["protocol"],
@@ -42,18 +46,18 @@ namespace AmqpTestConsole
                     throw new Exception("Unexpected amount of servers");
                 }
 
-                Console.WriteLine($"*** Connection: '{settings.Connection}'");
-                Console.WriteLine($"*** Send-Address: '{settings.SendAddress}'");
-                Console.WriteLine($"*** Receive-Address: '{settings.ReceiveAddress}'");
+                _logger.LogInformation($"Connection: '{settings.Connection}'");
+                _logger.LogInformation($"Send-Address: '{settings.SendAddress}'");
+                _logger.LogInformation($"Receive-Address: '{settings.ReceiveAddress}'");
 
 
                 MainImplementation(settings, loggerFactory).GetAwaiter().GetResult();
             }
             catch (Exception e)
             {
-                Console.WriteLine("Unexpected Exception: " + e.Message);
+                _logger.LogError(e, "Unexpected Exception");
                 if (e.InnerException != null)
-                    Console.WriteLine("Inner Exception: " + e.InnerException.Message);
+                    _logger.LogError(e.InnerException, "Inner Exception");
 
                 Console.WriteLine("Press any key to exit...");
                 Console.ReadKey();
@@ -68,11 +72,11 @@ namespace AmqpTestConsole
             {
                 if (ndpKey != null && ndpKey.GetValue("Release") != null)
                 {
-                    Console.WriteLine($".NET Framework Version: {CheckFor45PlusVersion((int)ndpKey.GetValue("Release"))}");
+                    _logger.LogInformation($".NET Framework Version: {CheckFor45PlusVersion((int)ndpKey.GetValue("Release"))}");
                 }
                 else
                 {
-                    Console.WriteLine(".NET Framework Version 4.5 or later is not detected.");
+                    _logger.LogInformation(".NET Framework Version 4.5 or later is not detected.");
                 }
             }            
         }                
@@ -159,8 +163,8 @@ namespace AmqpTestConsole
         }
 
         private static async Task ProcessMessage(AmqpTest.Message message)
-        {
-            Logger.LogMessage($"ProcessMessage:: {message.MessageId} - {message.Body}");
+        {            
+            _logger.LogInformation($"ProcessMessage:: {message.MessageId} - {message.Body.Substring(0, 40)}...");
 
             //Simulate processing            
             await Task.Delay(100);
