@@ -163,8 +163,13 @@ namespace AmqpTestConsole
         }
 
         private static async Task ProcessMessage(AmqpTest.Message message)
-        {            
-            _logger.LogInformation($"ProcessMessage:: {message.MessageId} - {message.Body.Substring(0, 40)}...");
+        {
+            var stringMessage = string.Empty;
+            if (message != null && message.Body.Length >= 40)
+            {
+                stringMessage = message.Body.Substring(0, 40);
+            }
+            _logger.LogInformation($"ProcessMessage:: {message.MessageId} - {stringMessage}...");
 
             //Simulate processing            
             await Task.Delay(100);
