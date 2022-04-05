@@ -29,6 +29,7 @@ namespace AmqpTestConsole
                     Password = ConfigurationManager.AppSettings["password"],
                     SendAddress = ConfigurationManager.AppSettings["send-address"],
                     ReceiveAddress = ConfigurationManager.AppSettings["receive-address"],
+                    SendBatchSize = ConfigurationManager.AppSettings["batch-size"],
                     Connection = ""
                 };
 
@@ -117,7 +118,7 @@ namespace AmqpTestConsole
             var keyInfo = new ConsoleKeyInfo();
             while (keyInfo.KeyChar != 'e' && keyInfo.KeyChar != 'E')
             {
-                Console.WriteLine("Press <e> to Exit, <r> to stop/start receiving messages, <s> to stop/start sending messages");
+                Console.WriteLine($"Press <e> to Exit, <r> to stop/start receiving messages, <s> to stop/start sending messages with batch-size '{settings.SendBatchSize}'");
                 keyInfo = Console.ReadKey();
                 if (keyInfo.KeyChar == 'r')
                 {
@@ -125,6 +126,9 @@ namespace AmqpTestConsole
                     {
                         _logger.LogInformation("Stopping all message receivers...");
                         await receiver.StopAll();
+                        _logger.LogInformation("Stopped all message receivers.");
+                        _logger.LogInformation($"Statistics::TotalReceivedMessages: {MessageStatistics.TotalReceivedMessages}");
+
                     }
                     else
                     {
@@ -140,10 +144,13 @@ namespace AmqpTestConsole
                     {
                         _logger.LogInformation("Stopping all message senders...");
                         await sender.StopAll();
+                        _logger.LogInformation("Stopped all message senders.");
+                        _logger.LogInformation($"Statistics::TotalSentMessages: {MessageStatistics.TotalSentMessages}");
+
                     }
                     else
                     {
-                        _logger.LogInformation("Starting all message senders...");
+                        _logger.LogInformation("Starting all message senders...");                        
                         await StartMessageSenders(sender);
                     }
 
@@ -172,7 +179,7 @@ namespace AmqpTestConsole
             _logger.LogInformation($"ProcessMessage:: {message.MessageId} - {stringMessage}...");
 
             //Simulate processing            
-            await Task.Delay(100);
+            await Task.Delay(10);
         }
     }
 }

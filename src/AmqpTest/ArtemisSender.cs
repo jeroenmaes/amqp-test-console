@@ -16,7 +16,7 @@ namespace AmqpTest
 
         public ArtemisSender(ConnectionSettings settings, ILoggerFactory loggerFactory = null) : base(settings, loggerFactory)
         {
-            _logger = ApplicationLogging.CreateLogger<ArtemisReceiver>();
+            _logger = ApplicationLogging.CreateLogger<ArtemisSender>();
         }
 
         new public async Task Init(CancellationToken token)

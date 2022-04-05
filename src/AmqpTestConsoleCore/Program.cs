@@ -45,6 +45,7 @@ namespace AmqpTestConsole
                     Password = config["password"],
                     SendAddress = config["send-address"],
                     ReceiveAddress = config["receive-address"],
+                    SendBatchSize = config["batch-size"],
                     Connection = ""
                 };
 
@@ -89,7 +90,7 @@ namespace AmqpTestConsole
             var keyInfo = new ConsoleKeyInfo();
             while (keyInfo.KeyChar != 'e' && keyInfo.KeyChar != 'E')
             {
-                Console.WriteLine("Press <e> to Exit, <r> to stop/start receiving messages, <s> to stop/start sending messages");
+                Console.WriteLine($"Press <e> to Exit, <r> to stop/start receiving messages, <s> to stop/start sending messages with batch-size '{settings.SendBatchSize}'");
                 keyInfo = Console.ReadKey();
                 if (keyInfo.KeyChar == 'r')
                 {
@@ -97,6 +98,8 @@ namespace AmqpTestConsole
                     {
                         _logger.LogInformation("Stopping all message receivers...");
                         await receiver.StopAll();
+                        _logger.LogInformation("Stopped all message receivers.");
+                        _logger.LogInformation($"Statistics::TotalReceivedMessages: {MessageStatistics.TotalReceivedMessages}");
                     }
                     else
                     {
@@ -112,6 +115,8 @@ namespace AmqpTestConsole
                     {
                         _logger.LogInformation("Stopping all message senders...");
                         await sender.StopAll();
+                        _logger.LogInformation("Stopped all message senders.");
+                        _logger.LogInformation($"Statistics::TotalSentMessages: {MessageStatistics.TotalSentMessages}");
                     }
                     else
                     {

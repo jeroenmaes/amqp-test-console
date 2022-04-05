@@ -12,6 +12,7 @@ namespace AmqpTest
     {
         private IConsumer receiver;        
         private ILogger _logger;
+        private readonly object statisticsLock = new object();
 
         public ArtemisReceiver(ConnectionSettings settings, ILoggerFactory loggerFactory = null) : base(settings, loggerFactory)
         {
@@ -72,6 +73,10 @@ namespace AmqpTest
                         await messageHandler(new Message { Body = msg.GetBody<string>().ToString(), MessageId = messageId });
 
                         await receiver.AcceptAsync(msg);
+                        lock (statisticsLock)
+                        {
+                            MessageStatistics.TotalReceivedMessages++;
+                        }
                     }
                     catch (ConsumerClosedException e)
                     {
@@ -80,7 +85,7 @@ namespace AmqpTest
                     }                    
 
                     token.ThrowIfCancellationRequested();
-
+                                        
                     Thread.Sleep(100);
                 }
             }
