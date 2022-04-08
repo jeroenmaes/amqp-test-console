@@ -10,14 +10,14 @@ namespace AmqpTest
 {
     internal class ArtemisReceiver : ArtemisConnection, IDisposable
     {
-        private IConsumer receiver;        
+        private IConsumer receiver;
         private ILogger _logger;
         private readonly object statisticsLock = new object();
 
         public ArtemisReceiver(ConnectionSettings settings, ILoggerFactory loggerFactory = null) : base(settings, loggerFactory)
         {
             _logger = ApplicationLogging.CreateLogger<ArtemisReceiver>();
-            _settings = settings;            
+            _settings = settings;
             if (loggerFactory == null)
             {
                 _loggerFactory = new NullLoggerFactory();
@@ -31,21 +31,32 @@ namespace AmqpTest
         new public async Task Init(CancellationToken token)
         {
             await base.Init(token);
-           
+
             var address = "";
             var queue = "";
+            //RoutingType routingType;
             if (_settings.ReceiveAddress.Contains("::"))
             {
                 address = _settings.ReceiveAddress.Split(':')[0];
                 queue = _settings.ReceiveAddress.Split(':')[2];
+                //routingType = RoutingType.Multicast;
             }
             else
             {
                 address = _settings.ReceiveAddress;
                 queue = _settings.ReceiveAddress;
+                //routingType = RoutingType.Anycast;
             }
 
-            receiver = await _connection.CreateConsumerAsync(new ConsumerConfiguration { Address = address, Queue = queue });
+            receiver = await _connection.CreateConsumerAsync(
+                new ConsumerConfiguration
+                {
+                    Address = address,
+                    Queue = queue,
+                    Durable = true,
+                    //RoutingType = routingType
+                });
+
         }
 
         internal async Task GetMessages(Func<AmqpTest.Message, Task> messageHandler, CancellationToken token)
@@ -82,10 +93,10 @@ namespace AmqpTest
                     {
                         //Only message, ConnectionFactory will handle reconnect
                         _logger.LogWarning(e, "ConsumerClosedException");
-                    }                    
+                    }
 
                     token.ThrowIfCancellationRequested();
-                                        
+
                     Thread.Sleep(100);
                 }
             }

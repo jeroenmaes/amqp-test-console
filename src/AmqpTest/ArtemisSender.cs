@@ -26,8 +26,9 @@ namespace AmqpTest
             producer = await _connection.CreateProducerAsync(new ProducerConfiguration
             {
                 Address = _settings.SendAddress,
-                MessageDurabilityMode = DurabilityMode.Durable
-            });
+                MessageDurabilityMode = DurabilityMode.Durable,
+                SetMessageCreationTime = true                
+            }) ;
 
         }
 

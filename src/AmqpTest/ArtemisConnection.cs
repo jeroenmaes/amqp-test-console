@@ -34,7 +34,8 @@ namespace AmqpTest
         {
             _connectionFactory = new ConnectionFactory
             {
-                LoggerFactory = _loggerFactory
+                LoggerFactory = _loggerFactory,
+                AutomaticRecoveryEnabled = true,                
             };
 
             Scheme schema = Scheme.Amqp;
